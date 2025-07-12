@@ -132,7 +132,6 @@ const Calendar: React.FC<CalendarProps> = ({
                 isToday={isTodayDate}
                 onDateClick={() => onDateChange(date)}
                 onTaskClick={onTaskSelect}
-                onTaskUpdate={onTaskUpdate}
               />
             );
           })}
