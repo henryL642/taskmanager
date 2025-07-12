@@ -11,7 +11,7 @@ interface CalendarDayProps {
   isToday: boolean;
   onDateClick: () => void;
   onTaskClick: (task: Task | null, subTask?: SubTask | null) => void;
-  onTaskUpdate?: (task: Task) => void;
+  // onTaskUpdate?: (task: Task) => void; // 已移除未使用的 prop
 }
 
 /**
@@ -27,7 +27,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   isToday,
   onDateClick,
   onTaskClick,
-  onTaskUpdate,
+  // onTaskUpdate, // 已移除未使用的 prop
 }) => {
   // 計算當日任務和子任務完成進度
   const completedTasks = tasks.filter(task => task.status === 'completed').length;
