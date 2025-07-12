@@ -122,7 +122,7 @@ const Calendar: React.FC<CalendarProps> = ({
         <div className="grid grid-cols-7">
           {daysInMonth.map((date, index) => {
             const dayTasks = getTasksForDate(date);
-            const dayPomodoros = getPomodorosForDate(pomodoroRecords, date);
+            // const dayPomodoros = getPomodorosForDate(pomodoroRecords, date); // 已移除未使用
             const isCurrentMonthDay = isCurrentMonth(date);
             const isTodayDate = isToday(date);
 
@@ -154,7 +154,7 @@ const Calendar: React.FC<CalendarProps> = ({
                 tasks={dayTasks}
                 subTasks={getSubTasksForDate(subTasks, date)}
                 tempSubTasks={getTempSubTasksForDate(tempSubTasks, date)}
-                pomodoroCount={dayPomodoros}
+                // pomodoroCount={dayPomodoros} // 已移除未使用的屬性
                 isCurrentMonth={isCurrentMonthDay}
                 isToday={isTodayDate}
                 onDateClick={() => onDateChange(date)}
