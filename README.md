@@ -348,4 +348,4 @@ npm run build
 4. 發起 Pull Request
 
 ## 授權
-MIT License 
+MIT License # 強制觸發 Vercel 重新部署
