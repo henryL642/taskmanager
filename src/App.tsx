@@ -1,43 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import { Task, SubTask, PomodoroRecord, AppSettings } from './types';
-import { taskStorage, subTaskStorage, pomodoroStorage, settingsStorage } from './utils/storage';
-import { splitTaskIntoSubTasks, isTodaySubTask } from './utils/helpers';
+import { isTodaySubTask } from './utils/helpers';
 import Header from './components/UI/Header';
 import Sidebar from './components/UI/Sidebar';
 import Calendar from './components/Calendar/Calendar';
 import TaskManager from './components/TaskManager/TaskManager';
-import Timer from './components/Timer/Timer';
 import Charts from './components/Charts/Charts';
+import Timer from './components/Timer/Timer';
+import { taskStorage, subTaskStorage, pomodoroStorage, settingsStorage } from './utils/storage';
 
-/**
- * 主應用組件
- * 負責整體佈局和狀態管理
- */
+// 臨時子任務類型
+interface TempSubTask {
+  id: string;
+  name: string;
+  shortName: string;
+  description?: string;
+  pomodoros: number;
+  completedPomodoros: number;
+  status: 'pending' | 'in-progress' | 'completed';
+  scheduledDate: string; // YYYY-MM-DD 格式
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 const App: React.FC = () => {
-  // 應用狀態
+  // 狀態管理
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [activeView, setActiveView] = useState<'calendar' | 'tasks' | 'charts'>('calendar');
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  
+  // 數據狀態
   const [tasks, setTasks] = useState<Task[]>([]);
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
+  // 臨時子任務狀態
+  const [tempSubTasks, setTempSubTasks] = useState<TempSubTask[]>([]);
   const [pomodoroRecords, setPomodoroRecords] = useState<PomodoroRecord[]>([]);
-  const [settings, setSettings] = useState<AppSettings>(settingsStorage.defaultSettings());
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [settings, setSettings] = useState<AppSettings>({
+    pomodoroDuration: 40,
+    shortBreakDuration: 5,
+    longBreakDuration: 15,
+    autoStartBreaks: false,
+    autoStartPomodoros: false,
+    notifications: true,
+    soundEnabled: true,
+  });
+
+  // 選擇狀態
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedSubTask, setSelectedSubTask] = useState<SubTask | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
-  const [activeView, setActiveView] = useState<'calendar' | 'tasks' | 'charts'>('calendar');
+
+  // 存儲實例已經從 utils/storage 導入
 
   // 初始化數據
   useEffect(() => {
-    // 載入本地存儲的數據
     const loadData = () => {
-      const savedTasks = taskStorage.getAll();
-      const savedSubTasks = subTaskStorage.getAll();
-      const savedRecords = pomodoroStorage.getAll();
-      const savedSettings = settingsStorage.get();
-      
-      setTasks(savedTasks);
-      setSubTasks(savedSubTasks);
-      setPomodoroRecords(savedRecords);
-      setSettings(savedSettings);
+      const loadedTasks = taskStorage.getAll();
+      const loadedSubTasks = subTaskStorage.getAll();
+      const loadedPomodoroRecords = pomodoroStorage.getAll();
+      const loadedSettings = settingsStorage.get();
+
+      setTasks(loadedTasks);
+      setSubTasks(loadedSubTasks);
+      setPomodoroRecords(loadedPomodoroRecords);
+      if (loadedSettings) {
+        setSettings(loadedSettings);
+      }
     };
 
     loadData();
@@ -48,27 +75,6 @@ const App: React.FC = () => {
     const newTasks = [...tasks, task];
     setTasks(newTasks);
     taskStorage.saveAll(newTasks);
-
-    // 只要是每日任務就自動產生子任務
-    if (task.isDaily) {
-      const newSubTasks = splitTaskIntoSubTasks(task);
-      console.log('splitTaskIntoSubTasks 產生的每日子任務', newSubTasks);
-      if (newSubTasks.length > 0) {
-        const updatedSubTasks = [...subTasks, ...newSubTasks];
-        setSubTasks(updatedSubTasks);
-        subTaskStorage.saveAll(updatedSubTasks);
-      }
-    }
-    // 其餘情況維持 autoSplit 判斷
-    else if (task.autoSplit) {
-      const newSubTasks = splitTaskIntoSubTasks(task);
-      console.log('splitTaskIntoSubTasks 產生的普通子任務', newSubTasks);
-      if (newSubTasks.length > 0) {
-        const updatedSubTasks = [...subTasks, ...newSubTasks];
-        setSubTasks(updatedSubTasks);
-        subTaskStorage.saveAll(updatedSubTasks);
-      }
-    }
   };
 
   const updateTask = (updatedTask: Task) => {
@@ -83,11 +89,6 @@ const App: React.FC = () => {
     const newTasks = tasks.filter(task => task.id !== taskId);
     setTasks(newTasks);
     taskStorage.saveAll(newTasks);
-    
-    // 刪除相關的子任務
-    subTaskStorage.deleteByParentTaskId(taskId);
-    const updatedSubTasks = subTasks.filter(subTask => subTask.parentTaskId !== taskId);
-    setSubTasks(updatedSubTasks);
   };
 
   // 番茄鐘記錄管理函數
@@ -124,6 +125,11 @@ const App: React.FC = () => {
     const newSubTasks = subTasks.filter(subTask => subTask.id !== subTaskId);
     setSubTasks(newSubTasks);
     subTaskStorage.saveAll(newSubTasks);
+  };
+
+  // 臨時子任務管理函數
+  const handleTempSubTasksUpdate = (newTempSubTasks: TempSubTask[]) => {
+    setTempSubTasks(newTempSubTasks);
   };
 
   // 設置管理函數
@@ -177,6 +183,13 @@ const App: React.FC = () => {
     }
   };
 
+  // 臨時任務選擇函數 - 暫時註釋掉未使用的函數
+  // const handleTempSubTaskSelect = (tempSubTask: TempSubTask | null) => {
+  //   setSelectedTempSubTask(tempSubTask);
+  //   setSelectedTask(null);
+  //   setSelectedSubTask(null);
+  // };
+
   // 為TaskManager提供的任務選擇函數
   const handleTaskManagerTaskSelect = (task: Task | null) => {
     setSelectedTask(task);
@@ -197,6 +210,7 @@ const App: React.FC = () => {
             currentDate={currentDate}
             tasks={tasks}
             subTasks={subTasks}
+            tempSubTasks={tempSubTasks}
             pomodoroRecords={pomodoroRecords}
             onDateChange={setCurrentDate}
             onTaskSelect={handleTaskSelect}
@@ -276,6 +290,7 @@ const App: React.FC = () => {
                   onUpdateRecord={updatePomodoroRecord}
                   onTaskUpdate={updateTask}
                   onSubTaskUpdate={updateSubTask}
+                  onTempSubTasksUpdate={handleTempSubTasksUpdate}
                 />
               </div>
             </div>

@@ -3,10 +3,25 @@ import { Task, SubTask, PomodoroRecord } from '../../types';
 import { getDaysInMonth, isToday, getPomodorosForDate, getSubTasksForDate } from '../../utils/helpers';
 import CalendarDay from './CalendarDay';
 
+// 臨時子任務類型
+interface TempSubTask {
+  id: string;
+  name: string;
+  shortName: string;
+  description?: string;
+  pomodoros: number;
+  completedPomodoros: number;
+  status: 'pending' | 'in-progress' | 'completed';
+  scheduledDate: string; // YYYY-MM-DD 格式
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 interface CalendarProps {
   currentDate: Date;
   tasks: Task[];
   subTasks: SubTask[];
+  tempSubTasks: TempSubTask[];
   pomodoroRecords: PomodoroRecord[];
   onDateChange: (date: Date) => void;
   onTaskSelect: (task: Task | null, subTask?: SubTask | null) => void;
@@ -21,6 +36,7 @@ const Calendar: React.FC<CalendarProps> = ({
   currentDate,
   tasks,
   subTasks,
+  tempSubTasks,
   pomodoroRecords,
   onDateChange,
   onTaskSelect,
@@ -64,6 +80,16 @@ const Calendar: React.FC<CalendarProps> = ({
   const isCurrentMonth = (date: Date): boolean => {
     return date.getMonth() === currentDate.getMonth() && 
            date.getFullYear() === currentDate.getFullYear();
+  };
+
+  // 獲取指定日期的臨時子任務
+  const getTempSubTasksForDate = (tempSubTasks: TempSubTask[], date: Date): TempSubTask[] => {
+    // 用本地時區組合 YYYY-MM-DD
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
+    return tempSubTasks.filter(tempSubTask => tempSubTask.scheduledDate === dateStr);
   };
 
   return (
@@ -127,6 +153,7 @@ const Calendar: React.FC<CalendarProps> = ({
                 date={date}
                 tasks={dayTasks}
                 subTasks={getSubTasksForDate(subTasks, date)}
+                tempSubTasks={getTempSubTasksForDate(tempSubTasks, date)}
                 pomodoroCount={dayPomodoros}
                 isCurrentMonth={isCurrentMonthDay}
                 isToday={isTodayDate}
@@ -141,14 +168,18 @@ const Calendar: React.FC<CalendarProps> = ({
       {/* 圖例說明 */}
       <div className="mt-4 p-4 bg-gray-50 rounded-lg">
         <h3 className="text-sm font-medium text-gray-900 mb-2">圖例說明</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-xs">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-tomato-500 rounded-full"></div>
-            <span className="text-gray-600">今日</span>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-xs">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <span className="text-gray-600">有任務</span>
+            <span className="text-gray-600">子任務完成番茄鐘數</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-black rounded-full"></div>
+            <span className="text-gray-600">臨時子任務完成番茄鐘數</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
+            <span className="text-gray-600">子任務（左紫邊）</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
