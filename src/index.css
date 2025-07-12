@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局樣式重置 */
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* 自定義滾動條 */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+}
+
+/* 自定義組件樣式 */
+@layer components {
+  /* 按鈕樣式 */
+  .btn-primary {
+    @apply bg-tomato-500 hover:bg-tomato-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  /* 卡片樣式 */
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+  }
+  
+  /* 輸入框樣式 */
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tomato-500 focus:border-transparent;
+  }
+  
+  /* 番茄鐘計時器樣式 */
+  .timer-display {
+    @apply text-4xl font-bold text-tomato-500 font-mono;
+  }
+  
+  /* 任務狀態指示器 */
+  .task-status-pending {
+    @apply bg-task-pending text-white px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .task-status-in-progress {
+    @apply bg-task-in-progress text-white px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .task-status-completed {
+    @apply bg-task-completed text-white px-2 py-1 rounded-full text-xs font-medium;
+  }
+}
+
+/* 動畫效果 */
+@layer utilities {
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-bounce-slow {
+    animation: bounce 2s infinite;
+  }
+} 
