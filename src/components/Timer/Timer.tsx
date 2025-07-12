@@ -85,12 +85,20 @@ const Timer: React.FC<TimerProps> = ({
   // 檢查臨時子任務是否為當日任務
   const isTodayTempSubTask = (tempSubTask: TempSubTask): boolean => {
     const today = new Date();
-    const taskDate = new Date(tempSubTask.scheduledDate);
+    const y = today.getFullYear();
+    const m = (today.getMonth() + 1).toString().padStart(2, '0');
+    const d = today.getDate().toString().padStart(2, '0');
+    const todayStr = `${y}-${m}-${d}`;
     
-    today.setHours(0, 0, 0, 0);
-    taskDate.setHours(0, 0, 0, 0);
+    // 調試：檢查日期比較
+    console.log('isTodayTempSubTask 調試:', {
+      today: today.toISOString(),
+      todayStr,
+      tempSubTaskScheduledDate: tempSubTask.scheduledDate,
+      isMatch: tempSubTask.scheduledDate === todayStr
+    });
     
-    return today.getTime() === taskDate.getTime();
+    return tempSubTask.scheduledDate === todayStr;
   };
 
   // 創建臨時子任務
@@ -106,6 +114,11 @@ const Timer: React.FC<TimerProps> = ({
     }
 
     const today = new Date();
+    const y = today.getFullYear();
+    const m = (today.getMonth() + 1).toString().padStart(2, '0');
+    const d = today.getDate().toString().padStart(2, '0');
+    const todayStr = `${y}-${m}-${d}`;
+    
     const newTempSubTask: TempSubTask = {
       id: generateId(),
       name: tempTaskForm.name,
@@ -114,11 +127,21 @@ const Timer: React.FC<TimerProps> = ({
       pomodoros: tempTaskForm.pomodoros,
       completedPomodoros: 0,
       status: 'pending',
-      scheduledDate: today.toISOString().split('T')[0],
+      scheduledDate: todayStr,
       createdAt: today,
       updatedAt: today,
     };
 
+    // 調試：確認日期設定
+    console.log('創建臨時任務，日期設定:', {
+      todayStr,
+      newTempSubTask: {
+        id: newTempSubTask.id,
+        name: newTempSubTask.name,
+        scheduledDate: newTempSubTask.scheduledDate
+      }
+    });
+    
     setTempSubTasks(prev => {
       const newTempSubTasks = [...prev, newTempSubTask];
       // 通知父組件臨時子任務已更新
@@ -324,6 +347,89 @@ const Timer: React.FC<TimerProps> = ({
         </p>
       </div>
 
+      {/* 臨時任務快速創建 */}
+      <div className="flex-shrink-0 mb-3">
+        <button
+          onClick={() => setShowTempTaskForm(true)}
+          className="w-full btn-primary text-sm py-2"
+        >
+          ➕ 新增臨時任務
+        </button>
+      </div>
+
+      {/* 臨時任務表單 - 使用絕對定位避免重疊 */}
+      {showTempTaskForm && (
+        <div className="absolute inset-0 bg-white z-10 flex flex-col">
+          <div className="flex-shrink-0 p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-lg font-medium text-gray-900">新增臨時任務</h4>
+              <button
+                onClick={() => setShowTempTaskForm(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="任務名稱"
+                value={tempTaskForm.name}
+                onChange={(e) => setTempTaskForm(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-tomato-500 focus:border-transparent"
+              />
+              <input
+                type="text"
+                placeholder="簡稱（最多2字）"
+                value={tempTaskForm.shortName}
+                onChange={(e) => setTempTaskForm(prev => ({ ...prev, shortName: e.target.value }))}
+                onBlur={(e) => {
+                  const value = e.target.value;
+                  if (value.length > 2) {
+                    setTempTaskForm(prev => ({ ...prev, shortName: value.substring(0, 2) }));
+                  }
+                }}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-tomato-500 focus:border-transparent"
+              />
+              <textarea
+                placeholder="描述（可選）"
+                value={tempTaskForm.description}
+                onChange={(e) => setTempTaskForm(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-tomato-500 focus:border-transparent"
+                rows={3}
+              />
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">番茄鐘數:</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={tempTaskForm.pomodoros}
+                  onChange={(e) => setTempTaskForm(prev => ({ ...prev, pomodoros: parseInt(e.target.value) || 1 }))}
+                  className="w-20 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-tomato-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 flex items-end p-4">
+            <div className="flex space-x-3 w-full">
+              <button
+                onClick={() => setShowTempTaskForm(false)}
+                className="flex-1 btn-secondary py-3 text-sm"
+              >
+                取消
+              </button>
+              <button
+                onClick={createTempSubTask}
+                className="flex-1 btn-primary py-3 text-sm"
+              >
+                創建並開始
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 選中的任務或子任務 */}
       {(selectedTask || selectedSubTask || selectedTempSubTask) && (
         <div className="flex-shrink-0 mb-3 p-3 bg-gray-50 rounded-lg">
@@ -360,77 +466,6 @@ const Timer: React.FC<TimerProps> = ({
         </div>
       )}
 
-      {/* 臨時任務快速創建 */}
-      <div className="flex-shrink-0 mb-3">
-        <button
-          onClick={() => setShowTempTaskForm(true)}
-          className="w-full btn-primary text-sm py-2"
-        >
-          ➕ 新增臨時任務
-        </button>
-      </div>
-
-      {/* 臨時任務表單 */}
-      {showTempTaskForm && (
-        <div className="flex-shrink-0 mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <h4 className="text-sm font-medium text-gray-900 mb-2">新增臨時任務</h4>
-          <div className="space-y-2">
-            <input
-              type="text"
-              placeholder="任務名稱"
-              value={tempTaskForm.name}
-              onChange={(e) => setTempTaskForm(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-            />
-            <input
-              type="text"
-              placeholder="簡稱（最多2字）"
-              value={tempTaskForm.shortName}
-              onChange={(e) => setTempTaskForm(prev => ({ ...prev, shortName: e.target.value }))}
-              onBlur={(e) => {
-                const value = e.target.value;
-                if (value.length > 2) {
-                  setTempTaskForm(prev => ({ ...prev, shortName: value.substring(0, 2) }));
-                }
-              }}
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-            />
-            <textarea
-              placeholder="描述（可選）"
-              value={tempTaskForm.description}
-              onChange={(e) => setTempTaskForm(prev => ({ ...prev, description: e.target.value }))}
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded resize-none"
-              rows={2}
-            />
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-600">番茄鐘數:</span>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={tempTaskForm.pomodoros}
-                onChange={(e) => setTempTaskForm(prev => ({ ...prev, pomodoros: parseInt(e.target.value) || 1 }))}
-                className="w-16 px-2 py-1 text-sm border border-gray-300 rounded"
-              />
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={createTempSubTask}
-                className="flex-1 btn-primary text-xs py-1"
-              >
-                創建並開始
-              </button>
-              <button
-                onClick={() => setShowTempTaskForm(false)}
-                className="flex-1 btn-secondary text-xs py-1"
-              >
-                取消
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 今日臨時任務列表 */}
       {tempSubTasks.length > 0 && (
         <div className="flex-shrink-0 mb-3">
@@ -441,7 +476,9 @@ const Timer: React.FC<TimerProps> = ({
               .map(task => (
                 <div
                   key={task.id}
-                  onClick={() => setSelectedTempSubTask(task)}
+                  onClick={() => {
+                    setSelectedTempSubTask(task);
+                  }}
                   className={`p-2 rounded text-xs cursor-pointer transition-colors border-l-2 border-orange-400 ${
                     selectedTempSubTask?.id === task.id
                       ? 'bg-orange-50 text-orange-700 border-orange-500'
