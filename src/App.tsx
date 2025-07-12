@@ -211,7 +211,7 @@ const App: React.FC = () => {
             tasks={tasks}
             subTasks={subTasks}
             tempSubTasks={tempSubTasks}
-            pomodoroRecords={pomodoroRecords}
+            // pomodoroRecords={pomodoroRecords} // 已移除未使用
             onDateChange={setCurrentDate}
             onTaskSelect={handleTaskSelect}
           />

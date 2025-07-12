@@ -1,6 +1,6 @@
 import React from 'react';
-import { Task, SubTask, PomodoroRecord } from '../../types';
-import { getDaysInMonth, isToday, getPomodorosForDate, getSubTasksForDate } from '../../utils/helpers';
+import { Task, SubTask } from '../../types';
+import { getDaysInMonth, isToday, getSubTasksForDate } from '../../utils/helpers';
 import CalendarDay from './CalendarDay';
 
 // 臨時子任務類型
@@ -22,7 +22,7 @@ interface CalendarProps {
   tasks: Task[];
   subTasks: SubTask[];
   tempSubTasks: TempSubTask[];
-  pomodoroRecords: PomodoroRecord[];
+  // pomodoroRecords: PomodoroRecord[]; // 已移除未使用
   onDateChange: (date: Date) => void;
   onTaskSelect: (task: Task | null, subTask?: SubTask | null) => void;
   // onTaskUpdate: (task: Task) => void; // 已移除未使用的 prop
@@ -37,7 +37,7 @@ const Calendar: React.FC<CalendarProps> = ({
   tasks,
   subTasks,
   tempSubTasks,
-  pomodoroRecords,
+  // pomodoroRecords, // 已移除未使用
   onDateChange,
   onTaskSelect,
   // onTaskUpdate, // 已移除未使用的 prop
