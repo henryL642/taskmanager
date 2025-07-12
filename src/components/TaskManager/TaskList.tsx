@@ -1,6 +1,6 @@
 import React from 'react';
 import { Task } from '../../types';
-import { formatDateLocal, calculateTaskProgress, getTaskStatusText, getPriorityText, getPriorityColor } from '../../utils/helpers';
+import { formatDateLocal, calculateTaskProgress, getPriorityText, getPriorityColor } from '../../utils/helpers';
 
 interface TaskListProps {
   tasks: Task[];

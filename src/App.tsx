@@ -127,10 +127,10 @@ const App: React.FC = () => {
   };
 
   // 設置管理函數
-  const updateSettings = (newSettings: AppSettings) => {
-    setSettings(newSettings);
-    settingsStorage.save(newSettings);
-  };
+  // const updateSettings = (newSettings: AppSettings) => {
+  //   setSettings(newSettings);
+  //   settingsStorage.save(newSettings);
+  // };
 
   // 檢查任務是否為當日任務
   const isTodayTask = (task: Task): boolean => {

@@ -217,7 +217,7 @@ const SubTaskManager: React.FC<SubTaskManagerProps> = ({
                 </div>
                 
                 <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
-                  <span>排程: {formatDateLocal(subTask.scheduledDate)}</span>
+                  <span>排程: {formatDateLocal(new Date(subTask.scheduledDate))}</span>
                   <span>番茄鐘: {subTask.completedPomodoros}/{subTask.pomodoros}</span>
                 </div>
 

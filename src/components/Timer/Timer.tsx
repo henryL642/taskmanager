@@ -171,7 +171,7 @@ const Timer: React.FC<TimerProps> = ({
 
   // 計時器邏輯
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
 
     if (isRunning && !isPaused && timeLeft > 0) {
       interval = setInterval(() => {

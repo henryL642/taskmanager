@@ -11,7 +11,7 @@ interface CalendarDayProps {
   isToday: boolean;
   onDateClick: () => void;
   onTaskClick: (task: Task | null, subTask?: SubTask | null) => void;
-  onTaskUpdate: (task: Task) => void;
+  onTaskUpdate?: (task: Task) => void;
 }
 
 /**

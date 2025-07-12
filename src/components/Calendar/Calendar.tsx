@@ -1,6 +1,6 @@
 import React from 'react';
 import { Task, SubTask, PomodoroRecord } from '../../types';
-import { getDaysInMonth, isToday, getPomodorosForDate, calculateTaskProgress, getSubTasksForDate } from '../../utils/helpers';
+import { getDaysInMonth, isToday, getPomodorosForDate, getSubTasksForDate } from '../../utils/helpers';
 import CalendarDay from './CalendarDay';
 
 interface CalendarProps {

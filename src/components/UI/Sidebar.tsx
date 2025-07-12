@@ -1,6 +1,6 @@
 import React from 'react';
 import { Task, SubTask, PomodoroRecord } from '../../types';
-import { isToday, getPomodorosForDate, isTodaySubTask } from '../../utils/helpers';
+import { getPomodorosForDate, isTodaySubTask } from '../../utils/helpers';
 
 interface SidebarProps {
   isOpen: boolean;
