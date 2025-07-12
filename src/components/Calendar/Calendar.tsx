@@ -10,7 +10,7 @@ interface CalendarProps {
   pomodoroRecords: PomodoroRecord[];
   onDateChange: (date: Date) => void;
   onTaskSelect: (task: Task | null, subTask?: SubTask | null) => void;
-  onTaskUpdate: (task: Task) => void;
+  // onTaskUpdate: (task: Task) => void; // 已移除未使用的 prop
 }
 
 /**
@@ -24,7 +24,7 @@ const Calendar: React.FC<CalendarProps> = ({
   pomodoroRecords,
   onDateChange,
   onTaskSelect,
-  onTaskUpdate,
+  // onTaskUpdate, // 已移除未使用的 prop
 }) => {
   // 獲取當月的所有日期
   const daysInMonth = getDaysInMonth(currentDate);
