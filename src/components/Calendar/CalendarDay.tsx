@@ -17,15 +17,15 @@ interface TempSubTask {
 }
 
 interface CalendarDayProps {
-  date: Date;
-  tasks: Task[];
-  subTasks: SubTask[];
-  tempSubTasks: TempSubTask[];
-  // pomodoroCount: number; // 已移除未使用
-  isCurrentMonth: boolean;
-  isToday: boolean;
-  onDateClick: () => void;
-  onTaskClick: (task: Task | null, subTask?: SubTask | null) => void;
+  date: Date; // 當前日期
+  tasks: Task[]; // 當天的主任務列表
+  subTasks: SubTask[]; // 當天的子任務列表
+  tempSubTasks: TempSubTask[]; // 當天的臨時子任務列表
+  // pomodoroCount: number; // 已移除未使用的屬性
+  isCurrentMonth: boolean; // 是否為當月
+  isToday: boolean; // 是否為今天
+  onDateClick: () => void; // 點擊日期事件
+  onTaskClick: (task: Task | null, subTask?: SubTask | null) => void; // 點擊任務或子任務事件
   // onTaskUpdate?: (task: Task) => void; // 已移除未使用的 prop
 }
 
