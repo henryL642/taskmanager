@@ -200,7 +200,6 @@ const App: React.FC = () => {
             pomodoroRecords={pomodoroRecords}
             onDateChange={setCurrentDate}
             onTaskSelect={handleTaskSelect}
-            onTaskUpdate={updateTask}
           />
         );
       case 'tasks':
