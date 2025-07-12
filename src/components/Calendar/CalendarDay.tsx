@@ -21,7 +21,7 @@ interface CalendarDayProps {
   tasks: Task[];
   subTasks: SubTask[];
   tempSubTasks: TempSubTask[];
-  pomodoroCount: number;
+  // pomodoroCount: number; // 已移除未使用
   isCurrentMonth: boolean;
   isToday: boolean;
   onDateClick: () => void;
@@ -38,7 +38,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   tasks,
   subTasks,
   tempSubTasks,
-  pomodoroCount,
+  // pomodoroCount, // 已移除未使用
   isCurrentMonth,
   isToday,
   onDateClick,
