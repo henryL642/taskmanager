@@ -1,13 +1,13 @@
 import React from 'react';
-import { Calendar, List, BarChart3, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, List, BarChart3, Database, Target, Menu, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { formatDateLocal } from '../../utils/helpers';
 
 interface HeaderProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   onToggleSidebar: () => void;
-  activeView: 'calendar' | 'tasks' | 'charts';
-  onViewChange: (view: 'calendar' | 'tasks' | 'charts') => void;
+  activeView: 'calendar' | 'tasks' | 'projects' | 'charts' | 'data' | 'settings';
+  onViewChange: (view: 'calendar' | 'tasks' | 'projects' | 'charts' | 'data' | 'settings') => void;
   isSidebarOpen: boolean;
 }
 
@@ -57,10 +57,28 @@ const Header: React.FC<HeaderProps> = ({
       description: '管理任務列表',
     },
     {
+      id: 'projects' as const,
+      label: '專案',
+      icon: Target,
+      description: '管理專案標籤',
+    },
+    {
       id: 'charts' as const,
       label: '統計',
       icon: BarChart3,
       description: '查看統計圖表',
+    },
+    {
+      id: 'data' as const,
+      label: '資料',
+      icon: Database,
+      description: '管理資料備份',
+    },
+    {
+      id: 'settings' as const,
+      label: '設定',
+      icon: Settings,
+      description: '應用程式設定',
     },
   ];
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Task, SubTask, PomodoroRecord, AppSettings } from '../../types';
 import { generateId, formatTime, isTodaySubTask } from '../../utils/helpers';
+import { playSound } from '../../utils/sound';
 
 // 臨時子任務類型
 interface TempSubTask {
@@ -122,7 +123,7 @@ const Timer: React.FC<TimerProps> = ({
     const newTempSubTask: TempSubTask = {
       id: generateId(),
       name: tempTaskForm.name,
-      shortName: tempTaskForm.shortName.substring(0, 2),
+              shortName: tempTaskForm.shortName.substring(0, 4),
       description: tempTaskForm.description,
       pomodoros: tempTaskForm.pomodoros,
       completedPomodoros: 0,
@@ -172,6 +173,11 @@ const Timer: React.FC<TimerProps> = ({
       }
       return newTempSubTasks;
     });
+    
+    // 同時更新選中的臨時任務狀態
+    if (selectedTempSubTask && selectedTempSubTask.id === updatedTempSubTask.id) {
+      setSelectedTempSubTask(updatedTempSubTask);
+    }
   };
 
   // 開始計時
@@ -180,6 +186,12 @@ const Timer: React.FC<TimerProps> = ({
     
     if (!currentTask) {
       alert('請先選擇一個任務或子任務');
+      return;
+    }
+
+    // 檢查任務是否已完成
+    if (currentTask.status === 'completed') {
+      alert('此任務已完成，無法繼續計時');
       return;
     }
 
@@ -247,30 +259,6 @@ const Timer: React.FC<TimerProps> = ({
       };
       setCurrentRecord(updatedRecord);
       onUpdateRecord(updatedRecord);
-
-      // 更新任務或子任務進度
-      if (selectedTempSubTask) {
-        const updatedTempSubTask: TempSubTask = {
-          ...selectedTempSubTask,
-          completedPomodoros: selectedTempSubTask.completedPomodoros + 1,
-          updatedAt: new Date(),
-        };
-        updateTempSubTask(updatedTempSubTask);
-      } else if (selectedSubTask) {
-        const updatedSubTask: SubTask = {
-          ...selectedSubTask,
-          completedPomodoros: selectedSubTask.completedPomodoros + 1,
-          updatedAt: new Date(),
-        };
-        onSubTaskUpdate(updatedSubTask);
-      } else if (selectedTask) {
-        const updatedTask: Task = {
-          ...selectedTask,
-          completedPomodoros: selectedTask.completedPomodoros + 1,
-          updatedAt: new Date(),
-        };
-        onTaskUpdate(updatedTask);
-      }
     }
 
     setIsRunning(false);
@@ -278,7 +266,61 @@ const Timer: React.FC<TimerProps> = ({
     setCurrentRecord(null);
     setTimeLeft(settings.pomodoroDuration * 60);
     setMode('work');
-  }, [currentRecord, selectedTask, selectedSubTask, selectedTempSubTask, onUpdateRecord, onTaskUpdate, onSubTaskUpdate, settings.pomodoroDuration]);
+  }, [currentRecord, onUpdateRecord, settings.pomodoroDuration]);
+
+  // 更新任務進度（工作時間結束時調用）
+  const updateTaskProgress = useCallback(() => {
+    // 更新任務或子任務進度
+    if (selectedTempSubTask) {
+      const newCompletedPomodoros = selectedTempSubTask.completedPomodoros + 1;
+      const isCompleted = newCompletedPomodoros >= selectedTempSubTask.pomodoros;
+      
+      const updatedTempSubTask: TempSubTask = {
+        ...selectedTempSubTask,
+        completedPomodoros: newCompletedPomodoros,
+        status: isCompleted ? 'completed' : 'in-progress',
+        updatedAt: new Date(),
+      };
+      updateTempSubTask(updatedTempSubTask);
+      
+      // 如果任務完成，顯示提示
+      if (isCompleted) {
+        console.log('臨時任務完成:', updatedTempSubTask.name);
+      }
+    } else if (selectedSubTask) {
+      const newCompletedPomodoros = selectedSubTask.completedPomodoros + 1;
+      const isCompleted = newCompletedPomodoros >= selectedSubTask.pomodoros;
+      
+      const updatedSubTask: SubTask = {
+        ...selectedSubTask,
+        completedPomodoros: newCompletedPomodoros,
+        status: isCompleted ? 'completed' : 'in-progress',
+        updatedAt: new Date(),
+      };
+      onSubTaskUpdate(updatedSubTask);
+      
+      // 如果任務完成，顯示提示
+      if (isCompleted) {
+        console.log('子任務完成:', updatedSubTask.name);
+      }
+    } else if (selectedTask) {
+      const newCompletedPomodoros = selectedTask.completedPomodoros + 1;
+      const isCompleted = newCompletedPomodoros >= selectedTask.totalPomodoros;
+      
+      const updatedTask: Task = {
+        ...selectedTask,
+        completedPomodoros: newCompletedPomodoros,
+        status: isCompleted ? 'completed' : 'in-progress',
+        updatedAt: new Date(),
+      };
+      onTaskUpdate(updatedTask);
+      
+      // 如果任務完成，顯示提示
+      if (isCompleted) {
+        console.log('任務完成:', updatedTask.name);
+      }
+    }
+  }, [selectedTask, selectedSubTask, selectedTempSubTask, onTaskUpdate, onSubTaskUpdate]);
 
   // 重置計時器
   const resetTimer = useCallback(() => {
@@ -308,11 +350,21 @@ const Timer: React.FC<TimerProps> = ({
           if (prev <= 1) {
             // 時間到
             if (mode === 'work') {
-              // 工作時間結束，開始休息
+              // 工作時間結束，立即更新任務進度
+              updateTaskProgress();
+              
+              // 播放番茄鐘完成音效
+              if (settings.soundEnabled) {
+                playSound('pomodoro-complete');
+              }
               setMode('break');
               return settings.shortBreakDuration * 60;
             } else {
               // 休息時間結束
+              // 播放休息完成音效
+              if (settings.soundEnabled) {
+                playSound('break-complete');
+              }
               stopTimer();
               return 0;
             }
@@ -327,7 +379,7 @@ const Timer: React.FC<TimerProps> = ({
         clearInterval(interval);
       }
     };
-  }, [isRunning, isPaused, timeLeft, mode, settings.shortBreakDuration, stopTimer]);
+  }, [isRunning, isPaused, timeLeft, mode, settings.shortBreakDuration, settings.soundEnabled, stopTimer, updateTaskProgress]);
 
   // 當選擇的任務改變時重置計時器
   useEffect(() => {
@@ -380,13 +432,13 @@ const Timer: React.FC<TimerProps> = ({
               />
               <input
                 type="text"
-                placeholder="簡稱（最多2字）"
+                placeholder="簡稱（最多4字）"
                 value={tempTaskForm.shortName}
                 onChange={(e) => setTempTaskForm(prev => ({ ...prev, shortName: e.target.value }))}
                 onBlur={(e) => {
                   const value = e.target.value;
                   if (value.length > 2) {
-                    setTempTaskForm(prev => ({ ...prev, shortName: value.substring(0, 2) }));
+                    setTempTaskForm(prev => ({ ...prev, shortName: value.substring(0, 4) }));
                   }
                 }}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-tomato-500 focus:border-transparent"
@@ -473,26 +525,44 @@ const Timer: React.FC<TimerProps> = ({
           <div className="space-y-1 max-h-20 overflow-y-auto">
             {tempSubTasks
               .filter(task => isTodayTempSubTask(task))
-              .map(task => (
-                <div
-                  key={task.id}
-                  onClick={() => {
-                    setSelectedTempSubTask(task);
-                  }}
-                  className={`p-2 rounded text-xs cursor-pointer transition-colors border-l-2 border-orange-400 ${
-                    selectedTempSubTask?.id === task.id
-                      ? 'bg-orange-50 text-orange-700 border-orange-500'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium truncate">{task.shortName}</span>
-                    <span className="text-xs ml-1">
-                      {task.completedPomodoros}/{task.pomodoros}
-                    </span>
+              .map(task => {
+                const isCompleted = task.status === 'completed';
+                const isSelected = selectedTempSubTask?.id === task.id;
+                
+                return (
+                  <div
+                    key={task.id}
+                    onClick={() => {
+                      // 如果任務已完成，不允許選擇
+                      if (isCompleted) {
+                        return;
+                      }
+                      setSelectedTempSubTask(task);
+                    }}
+                    className={`p-2 rounded text-xs transition-colors border-l-2 ${
+                      isCompleted
+                        ? 'bg-green-50 text-green-700 border-green-500 cursor-not-allowed'
+                        : isSelected
+                        ? 'bg-orange-50 text-orange-700 border-orange-500 cursor-pointer'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100 cursor-pointer border-orange-400'
+                    }`}
+                    title={isCompleted ? `${task.name} - 已完成` : `${task.name} - ${task.completedPomodoros}/${task.pomodoros}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium truncate">{task.shortName}</span>
+                      <span className="text-xs ml-1">
+                        {task.completedPomodoros}/{task.pomodoros}
+                      </span>
+                    </div>
+                    {/* 完成狀態指示器 */}
+                    {isCompleted && (
+                      <div className="flex items-center justify-center mt-1">
+                        <span className="text-xs text-green-600">✓ 已完成</span>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
           </div>
         </div>
       )}
@@ -525,9 +595,9 @@ const Timer: React.FC<TimerProps> = ({
                 onClick={startTimer}
                 disabled={
                   (!selectedTask && !selectedSubTask && !selectedTempSubTask) || 
-                  (selectedTask ? !isTodayTask(selectedTask) : false) ||
-                  (selectedSubTask ? !isTodaySubTask(selectedSubTask) : false) ||
-                  (selectedTempSubTask ? !isTodayTempSubTask(selectedTempSubTask) : false)
+                  (selectedTask ? (!isTodayTask(selectedTask) || selectedTask.status === 'completed') : false) ||
+                  (selectedSubTask ? (!isTodaySubTask(selectedSubTask) || selectedSubTask.status === 'completed') : false) ||
+                  (selectedTempSubTask ? (!isTodayTempSubTask(selectedTempSubTask) || selectedTempSubTask.status === 'completed') : false)
                 }
                 className="btn-primary px-5 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -604,6 +674,15 @@ const Timer: React.FC<TimerProps> = ({
         <div className="flex-shrink-0 mb-2 p-2 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-xs text-red-800 text-center">
             只能選擇當日的臨時任務進行番茄鐘計時
+          </p>
+        </div>
+      )}
+
+      {/* 已完成任務提示 */}
+      {(selectedTask?.status === 'completed' || selectedSubTask?.status === 'completed' || selectedTempSubTask?.status === 'completed') && (
+        <div className="flex-shrink-0 mb-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-xs text-green-800 text-center">
+            此任務已完成，無法繼續計時
           </p>
         </div>
       )}

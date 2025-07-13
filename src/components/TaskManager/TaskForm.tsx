@@ -71,8 +71,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
     }
 
     // 檢查簡稱長度
-    if (formData.shortName.length > 2) {
-      alert('任務簡稱不能超過2個字符');
+    if (formData.shortName.length > 4) {
+      alert('任務簡稱不能超過4個字符');
       return;
     }
 
@@ -87,7 +87,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
     const taskData: Partial<Task> = {
       name: formData.name.trim(),
-      shortName: formData.shortName.trim().substring(0, 2), // 確保最多2個字符
+      shortName: formData.shortName.trim().substring(0, 4), // 確保最多4個字符
       description: formData.description.trim() || undefined,
       startDate: startDate,
       deadline: deadline,
@@ -98,6 +98,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
       color: formData.color,
       autoSplit: formData.isDaily ? true : formData.autoSplit, // 每日任務預設自動分配
     };
+    
+    console.log('TaskForm 提交的任務數據:', {
+      name: taskData.name,
+      isDaily: taskData.isDaily,
+      startDate: taskData.startDate?.toISOString().split('T')[0],
+      deadline: taskData.deadline?.toISOString().split('T')[0],
+      dailyPomodoros: taskData.dailyPomodoros
+    });
 
     onSubmit(taskData);
   };
@@ -135,7 +143,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         {/* 任務簡稱 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            任務簡稱 * <span className="text-xs text-gray-500">（最多2個中文字，用於行事曆顯示）</span>
+            任務簡稱 * <span className="text-xs text-gray-500">（最多4個字符，用於行事曆顯示）</span>
           </label>
           <input
             type="text"
@@ -146,19 +154,19 @@ const TaskForm: React.FC<TaskFormProps> = ({
               handleInputChange('shortName', value);
             }}
             onBlur={(e) => {
-              // 失去焦點時截取前2個字符
+              // 失去焦點時截取前4個字符
               const value = e.target.value;
-              if (value.length > 2) {
-                handleInputChange('shortName', value.substring(0, 2));
+              if (value.length > 4) {
+                handleInputChange('shortName', value.substring(0, 4));
               }
             }}
             className="input-field"
             placeholder="輸入簡稱（如：學習、運動）"
             required
           />
-          {formData.shortName.length > 2 && (
+          {formData.shortName.length > 4 && (
             <p className="text-xs text-red-500 mt-1">
-              簡稱不能超過2個字符，將自動截取前2個字符
+              簡稱不能超過4個字符，將自動截取前4個字符
             </p>
           )}
         </div>

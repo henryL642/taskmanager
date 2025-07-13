@@ -36,11 +36,46 @@ const SubTaskManager: React.FC<SubTaskManagerProps> = ({
   // 初始化表單數據
   useEffect(() => {
     if (editingSubTask) {
+      // 調試日期轉換問題
+      console.log('SubTaskManager 編輯子任務日期調試:', {
+        原始scheduledDate: editingSubTask.scheduledDate,
+        原始scheduledDate類型: typeof editingSubTask.scheduledDate,
+        原始scheduledDate構造函數: editingSubTask.scheduledDate?.constructor?.name,
+        子任務名稱: editingSubTask.name
+      });
+      
+      // 正確處理日期轉換
+      let scheduledDateStr: string;
+      if (editingSubTask.scheduledDate instanceof Date) {
+        // 如果是 Date 對象，直接轉換為 YYYY-MM-DD 格式
+        const year = editingSubTask.scheduledDate.getFullYear();
+        const month = String(editingSubTask.scheduledDate.getMonth() + 1).padStart(2, '0');
+        const day = String(editingSubTask.scheduledDate.getDate()).padStart(2, '0');
+        scheduledDateStr = `${year}-${month}-${day}`;
+      } else if (typeof editingSubTask.scheduledDate === 'string') {
+        // 如果是字符串，檢查格式
+        if (editingSubTask.scheduledDate.includes('T')) {
+          // ISO 格式，提取日期部分
+          scheduledDateStr = editingSubTask.scheduledDate.split('T')[0];
+        } else {
+          // 已經是 YYYY-MM-DD 格式
+          scheduledDateStr = editingSubTask.scheduledDate;
+        }
+      } else {
+        // 其他情況，使用當前日期
+        scheduledDateStr = new Date().toISOString().split('T')[0];
+      }
+      
+      console.log('日期轉換結果:', {
+        原始: editingSubTask.scheduledDate,
+        轉換後: scheduledDateStr
+      });
+      
       setFormData({
         name: editingSubTask.name,
         shortName: editingSubTask.shortName,
         description: editingSubTask.description || '',
-        scheduledDate: new Date(editingSubTask.scheduledDate).toISOString().split('T')[0],
+        scheduledDate: scheduledDateStr,
         pomodoros: editingSubTask.pomodoros,
       });
     } else {
@@ -69,8 +104,8 @@ const SubTaskManager: React.FC<SubTaskManagerProps> = ({
     }
 
     // 檢查簡稱長度
-    if (formData.shortName.length > 2) {
-      alert('子任務簡稱不能超過2個字符');
+    if (formData.shortName.length > 4) {
+      alert('子任務簡稱不能超過4個字符');
       return;
     }
 
@@ -89,7 +124,7 @@ const SubTaskManager: React.FC<SubTaskManagerProps> = ({
       const updatedSubTask: SubTask = {
         ...editingSubTask,
         name: formData.name.trim(),
-        shortName: formData.shortName.trim().substring(0, 2),
+        shortName: formData.shortName.trim().substring(0, 4),
         description: formData.description.trim() || undefined,
         scheduledDate: scheduledDate,
         pomodoros: formData.pomodoros,
@@ -102,7 +137,7 @@ const SubTaskManager: React.FC<SubTaskManagerProps> = ({
         id: generateId(),
         parentTaskId: parentTask.id,
         name: formData.name.trim(),
-        shortName: formData.shortName.trim().substring(0, 2),
+        shortName: formData.shortName.trim().substring(0, 4),
         description: formData.description.trim() || undefined,
         scheduledDate: scheduledDate,
         pomodoros: formData.pomodoros,
@@ -148,13 +183,34 @@ const SubTaskManager: React.FC<SubTaskManagerProps> = ({
   };
 
   // DEBUG: 輸出所有子任務和父任務ID，協助排查
-  console.log('全部子任務', subTasks);
-  console.log('當前主任務ID', parentTask.id);
+  console.log('SubTaskManager 調試信息:', {
+    全部子任務數量: subTasks.length,
+    全部子任務: subTasks.map(st => ({
+      id: st.id,
+      name: st.name,
+      parentTaskId: st.parentTaskId,
+      scheduledDate: st.scheduledDate
+    })),
+    當前主任務ID: parentTask.id,
+    當前主任務名稱: parentTask.name,
+    主任務是否為每日任務: parentTask.isDaily,
+    主任務開始日期: parentTask.startDate,
+    主任務截止日期: parentTask.deadline
+  });
 
   // 按日期排序並過濾出屬於當前主任務的子任務
   const sortedSubTasks = subTasks
     .filter(st => String(st.parentTaskId) === String(parentTask.id))
     .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime());
+
+  console.log('過濾後的子任務:', {
+    過濾後數量: sortedSubTasks.length,
+    過濾後子任務: sortedSubTasks.map(st => ({
+      id: st.id,
+      name: st.name,
+      scheduledDate: st.scheduledDate
+    }))
+  });
 
   return (
     <div className="card">
@@ -298,7 +354,7 @@ const SubTaskManager: React.FC<SubTaskManagerProps> = ({
             {/* 子任務簡稱 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                子任務簡稱 * <span className="text-xs text-gray-500">（最多2個字符）</span>
+                子任務簡稱 * <span className="text-xs text-gray-500">（最多4個字符）</span>
               </label>
               <input
                 type="text"
@@ -306,8 +362,8 @@ const SubTaskManager: React.FC<SubTaskManagerProps> = ({
                 onChange={(e) => handleInputChange('shortName', e.target.value)}
                 onBlur={(e) => {
                   const value = e.target.value;
-                  if (value.length > 2) {
-                    handleInputChange('shortName', value.substring(0, 2));
+                  if (value.length > 4) {
+                    handleInputChange('shortName', value.substring(0, 4));
                   }
                 }}
                 className="input-field"

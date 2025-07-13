@@ -17,24 +17,44 @@ export const splitTaskIntoSubTasks = (task: Task): SubTask[] => {
   if (task.isDaily) {
     const startDate = new Date(task.startDate);
     const deadline = new Date(task.deadline);
-    const daysDiff = Math.ceil((deadline.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    // 重置時間部分，確保日期比較準確
+    startDate.setHours(0, 0, 0, 0);
+    deadline.setHours(0, 0, 0, 0); // 改為0點，這樣計算天數更準確
+    
+    // 計算天數差（包含開始和結束日期）
+    const timeDiff = deadline.getTime() - startDate.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24)) + 1;
     const dailyPomodoros = task.dailyPomodoros && task.dailyPomodoros > 0 ? task.dailyPomodoros : 1; // 預設為1
+    
+    console.log('每日任務分解調試:', {
+      taskName: task.name,
+      startDate: startDate.toISOString().split('T')[0],
+      deadline: deadline.toISOString().split('T')[0],
+      startDateTimestamp: startDate.getTime(),
+      deadlineTimestamp: deadline.getTime(),
+      timeDiff,
+      timeDiffInDays: timeDiff / (1000 * 60 * 60 * 24),
+      daysDiff,
+      dailyPomodoros
+    });
+    
     const debugSubTasks = [];
     for (let i = 0; i < daysDiff; i++) {
       const scheduledDateObj = new Date(startDate);
       scheduledDateObj.setDate(startDate.getDate() + i);
-      // 生成 YYYY-MM-DD 字串
-      const scheduledDate = formatDate(scheduledDateObj);
-      // 生成子任務名稱：主任務名稱-0710
+      
+      // 生成子任務名稱：主任務名稱-MMDD
       const month = (scheduledDateObj.getMonth() + 1).toString().padStart(2, '0');
       const day = scheduledDateObj.getDate().toString().padStart(2, '0');
+      
       const subTask: SubTask = {
         id: generateId(),
         parentTaskId: task.id,
         name: `${task.name}-${month}${day}`,
         shortName: `${task.shortName}-${month}${day}`,
         description: task.description,
-        scheduledDate: scheduledDate, // 存 YYYY-MM-DD
+        scheduledDate: scheduledDateObj, // 使用 Date 對象保持一致性
         pomodoros: dailyPomodoros,
         completedPomodoros: 0,
         status: 'pending',
@@ -43,9 +63,16 @@ export const splitTaskIntoSubTasks = (task: Task): SubTask[] => {
         color: task.color,
         priority: task.priority,
       };
+      
       subTasks.push(subTask);
-      debugSubTasks.push(subTask);
+      debugSubTasks.push({
+        id: subTask.id,
+        name: subTask.name,
+        scheduledDate: scheduledDateObj.toISOString().split('T')[0],
+        pomodoros: subTask.pomodoros
+      });
     }
+    
     // DEBUG: 輸出自動產生的每日子任務
     console.log('splitTaskIntoSubTasks 產生的每日子任務', debugSubTasks);
     return subTasks;
@@ -104,7 +131,23 @@ export const isTodaySubTask = (subTask: SubTask): boolean => {
   today.setHours(0, 0, 0, 0);
   scheduledDate.setHours(0, 0, 0, 0);
   
-  return today.getTime() === scheduledDate.getTime() && subTask.status !== 'completed';
+  const isToday = today.getTime() === scheduledDate.getTime();
+  const isNotCompleted = subTask.status !== 'completed';
+  
+  // DEBUG: 調試今日子任務檢查
+  if (subTask.name.includes('測試') || subTask.name.includes('test')) {
+    console.log('isTodaySubTask 調試:', {
+      subTaskName: subTask.name,
+      scheduledDate: subTask.scheduledDate,
+      today: today.toISOString().split('T')[0],
+      scheduledDateOnly: scheduledDate.toISOString().split('T')[0],
+      isToday,
+      isNotCompleted,
+      result: isToday && isNotCompleted
+    });
+  }
+  
+  return isToday && isNotCompleted;
 };
 
 // 獲取指定日期的子任務
@@ -112,6 +155,38 @@ export const getSubTasksForDate = (subTasks: SubTask[], date: Date): SubTask[] =
   const y1 = date.getFullYear();
   const m1 = date.getMonth() + 1;
   const d1 = date.getDate();
+  
+  // DEBUG: 調試日期比較
+  const debugInfo = {
+    目標日期: `${y1}-${m1.toString().padStart(2, '0')}-${d1.toString().padStart(2, '0')}`,
+    子任務數量: subTasks.length,
+    子任務日期: subTasks.map(st => {
+      let y2, m2, d2;
+      if (typeof st.scheduledDate === 'string') {
+        const [yy, mm, dd] = st.scheduledDate.split('-').map(Number);
+        y2 = yy;
+        m2 = mm;
+        d2 = dd;
+      } else {
+        const dt = st.scheduledDate as Date;
+        y2 = dt.getFullYear();
+        m2 = dt.getMonth() + 1;
+        d2 = dt.getDate();
+      }
+      return {
+        id: st.id,
+        name: st.name,
+        scheduledDate: st.scheduledDate,
+        parsedDate: `${y2}-${m2.toString().padStart(2, '0')}-${d2.toString().padStart(2, '0')}`,
+        isMatch: y1 === y2 && m1 === m2 && d1 === d2
+      };
+    })
+  };
+  
+  if (subTasks.length > 0) {
+    console.log('getSubTasksForDate 調試:', debugInfo);
+  }
+  
   return subTasks.filter(subTask => {
     let y2, m2, d2;
     if (typeof subTask.scheduledDate === 'string') {

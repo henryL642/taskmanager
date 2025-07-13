@@ -7,6 +7,9 @@ import Calendar from './components/Calendar/Calendar';
 import TaskManager from './components/TaskManager/TaskManager';
 import Charts from './components/Charts/Charts';
 import Timer from './components/Timer/Timer';
+import DataManager from './components/UI/DataManager';
+import ProjectManager from './components/ProjectManager/ProjectManager';
+import Settings from './components/Settings/Settings';
 import { taskStorage, subTaskStorage, pomodoroStorage, settingsStorage } from './utils/storage';
 
 // 臨時子任務類型
@@ -26,7 +29,7 @@ interface TempSubTask {
 const App: React.FC = () => {
   // 狀態管理
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [activeView, setActiveView] = useState<'calendar' | 'tasks' | 'charts'>('calendar');
+  const [activeView, setActiveView] = useState<'calendar' | 'tasks' | 'projects' | 'charts' | 'data' | 'settings'>('calendar');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   
   // 數據狀態
@@ -43,6 +46,7 @@ const App: React.FC = () => {
     autoStartPomodoros: false,
     notifications: true,
     soundEnabled: true,
+    timezone: 'Asia/Taipei',
   });
 
   // 選擇狀態
@@ -86,9 +90,26 @@ const App: React.FC = () => {
   };
 
   const deleteTask = (taskId: string) => {
+    console.log('App deleteTask 調試:', {
+      刪除任務ID: taskId,
+      當前任務數量: tasks.length,
+      當前子任務數量: subTasks.length
+    });
+    
+    // 刪除主任務
     const newTasks = tasks.filter(task => task.id !== taskId);
     setTasks(newTasks);
     taskStorage.saveAll(newTasks);
+    
+    // 刪除相關的子任務
+    const newSubTasks = subTasks.filter(subTask => subTask.parentTaskId !== taskId);
+    setSubTasks(newSubTasks);
+    subTaskStorage.saveAll(newSubTasks);
+    
+    console.log('App deleteTask 完成:', {
+      更新後任務數量: newTasks.length,
+      更新後子任務數量: newSubTasks.length
+    });
   };
 
   // 番茄鐘記錄管理函數
@@ -108,9 +129,30 @@ const App: React.FC = () => {
 
   // 子任務管理函數
   const addSubTask = (subTask: SubTask) => {
+    console.log('App addSubTask 調試:', {
+      新增子任務: subTask,
+      當前子任務數量: subTasks.length
+    });
     const newSubTasks = [...subTasks, subTask];
     setSubTasks(newSubTasks);
     subTaskStorage.saveAll(newSubTasks);
+    console.log('App addSubTask 完成:', {
+      更新後子任務數量: newSubTasks.length
+    });
+  };
+
+  // 批量添加子任務函數
+  const addSubTasks = (newSubTasks: SubTask[]) => {
+    console.log('App addSubTasks 批量添加調試:', {
+      新增子任務數量: newSubTasks.length,
+      當前子任務數量: subTasks.length
+    });
+    const updatedSubTasks = [...subTasks, ...newSubTasks];
+    setSubTasks(updatedSubTasks);
+    subTaskStorage.saveAll(updatedSubTasks);
+    console.log('App addSubTasks 批量添加完成:', {
+      更新後子任務數量: updatedSubTasks.length
+    });
   };
 
   const updateSubTask = (updatedSubTask: SubTask) => {
@@ -133,10 +175,10 @@ const App: React.FC = () => {
   };
 
   // 設置管理函數
-  // const updateSettings = (newSettings: AppSettings) => {
-  //   setSettings(newSettings);
-  //   settingsStorage.save(newSettings);
-  // };
+  const updateSettings = (newSettings: AppSettings) => {
+    setSettings(newSettings);
+    settingsStorage.save(newSettings);
+  };
 
   // 檢查任務是否為當日任務
   const isTodayTask = (task: Task): boolean => {
@@ -225,6 +267,7 @@ const App: React.FC = () => {
             onUpdateTask={updateTask}
             onDeleteTask={deleteTask}
             onAddSubTask={addSubTask}
+            onAddSubTasks={addSubTasks}
             onUpdateSubTask={updateSubTask}
             onDeleteSubTask={deleteSubTask}
             selectedTask={selectedTask}
@@ -239,6 +282,12 @@ const App: React.FC = () => {
             currentDate={currentDate}
           />
         );
+      case 'projects':
+        return <ProjectManager />;
+      case 'data':
+        return <DataManager />;
+      case 'settings':
+        return <Settings settings={settings} onSettingsUpdate={updateSettings} />;
       default:
         return null;
     }
@@ -268,38 +317,30 @@ const App: React.FC = () => {
           onViewChange={setActiveView}
         />
 
-        {/* 主內容區域 */}
+        {/* 主內容區域 - 所有頁面都顯示計時器 */}
         <main className={`flex-1 transition-all duration-300 ${
           isSidebarOpen ? 'ml-64' : 'ml-0'
         }`}>
-          {activeView === 'calendar' ? (
-            // 月曆頁面：顯示番茄鐘計時器
-            <div className="h-full flex">
-              {/* 左側主要內容 - 可滾動 */}
-              <div className="flex-1 p-6 overflow-y-auto">
-                {renderMainContent()}
-              </div>
-
-              {/* 右側番茄鐘計時器 - 固定不滾動 */}
-              <div className="w-80 bg-white border-l border-gray-200 p-6 flex-shrink-0 h-[calc(100vh-4rem)] overflow-hidden">
-                <Timer
-                  selectedTask={selectedTask}
-                  selectedSubTask={selectedSubTask}
-                  settings={settings}
-                  onAddRecord={addPomodoroRecord}
-                  onUpdateRecord={updatePomodoroRecord}
-                  onTaskUpdate={updateTask}
-                  onSubTaskUpdate={updateSubTask}
-                  onTempSubTasksUpdate={handleTempSubTasksUpdate}
-                />
-              </div>
-            </div>
-          ) : (
-            // 其他頁面：只顯示主要內容
-            <div className="h-full p-6 overflow-y-auto">
+          <div className="h-full flex">
+            {/* 左側主要內容 - 可滾動 */}
+            <div className="flex-1 p-6 overflow-y-auto">
               {renderMainContent()}
             </div>
-          )}
+
+            {/* 右側番茄鐘計時器 - 固定不滾動，所有頁面都顯示 */}
+            <div className="w-80 bg-white border-l border-gray-200 p-6 flex-shrink-0 h-[calc(100vh-4rem)] overflow-hidden">
+              <Timer
+                selectedTask={selectedTask}
+                selectedSubTask={selectedSubTask}
+                settings={settings}
+                onAddRecord={addPomodoroRecord}
+                onUpdateRecord={updatePomodoroRecord}
+                onTaskUpdate={updateTask}
+                onSubTaskUpdate={updateSubTask}
+                onTempSubTasksUpdate={handleTempSubTasksUpdate}
+              />
+            </div>
+          </div>
         </main>
       </div>
     </div>

@@ -209,16 +209,21 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
               key={`tempsubtask-${tempSubTask.id}`}
               onClick={(e) => {
                 e.stopPropagation();
+                // 如果任務已完成，不允許點擊
+                if (isCompleted) {
+                  return;
+                }
                 // 臨時任務的點擊處理會在 Timer 組件中處理
+                // 這裡可以添加提示或直接不響應點擊
               }}
-              className={`p-1 rounded text-xs cursor-pointer transition-colors border-l-2 border-black ${
+              className={`p-1 rounded text-xs transition-colors border-l-2 border-black ${
                 isCompleted
-                  ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                  ? 'bg-green-50 text-green-700 cursor-not-allowed'
                   : tempSubTask.status === 'in-progress'
-                  ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                  : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                  ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer'
+                  : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 cursor-pointer'
               }`}
-              title={`${tempSubTask.name} - ${Math.round(progress)}% 完成`}
+              title={isCompleted ? `${tempSubTask.name} - 已完成` : `${tempSubTask.name} - ${Math.round(progress)}% 完成`}
             >
               <div className="flex items-center justify-between">
                 <span className="font-medium">{tempSubTask.shortName}</span>

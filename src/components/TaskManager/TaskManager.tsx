@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task, SubTask } from '../../types';
-import { generateId, formatDateLocal, getTaskStatusText, getPriorityText, getPriorityColor } from '../../utils/helpers';
+import { generateId, formatDateLocal, getTaskStatusText, getPriorityText, getPriorityColor, splitTaskIntoSubTasks } from '../../utils/helpers';
 import TaskForm from './TaskForm';
 import TaskList from './TaskList';
 import SubTaskManager from './SubTaskManager';
@@ -12,6 +12,7 @@ interface TaskManagerProps {
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onAddSubTask: (subTask: SubTask) => void;
+  onAddSubTasks: (subTasks: SubTask[]) => void;
   onUpdateSubTask: (subTask: SubTask) => void;
   onDeleteSubTask: (subTaskId: string) => void;
   selectedTask: Task | null;
@@ -29,6 +30,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({
   onUpdateTask,
   onDeleteTask,
   onAddSubTask,
+  onAddSubTasks,
   onUpdateSubTask,
   onDeleteSubTask,
   selectedTask,
@@ -68,6 +70,8 @@ const TaskManager: React.FC<TaskManagerProps> = ({
 
   // 新增任務
   const handleAddTask = (taskData: Partial<Task>) => {
+    console.log('TaskManager handleAddTask 接收到的任務數據:', taskData);
+    
     const newTask: Task = {
       id: generateId(),
       name: taskData.name || '',
@@ -84,10 +88,40 @@ const TaskManager: React.FC<TaskManagerProps> = ({
       updatedAt: new Date(),
       color: taskData.color,
       priority: taskData.priority || 'medium',
-      autoSplit: false, // 我們不使用自動分解，改用手動管理
+      autoSplit: taskData.isDaily ? true : (taskData.autoSplit || false), // 每日任務自動啟用分解
     };
+    
+    console.log('TaskManager handleAddTask 創建的任務對象:', {
+      id: newTask.id,
+      name: newTask.name,
+      isDaily: newTask.isDaily,
+      startDate: newTask.startDate.toISOString().split('T')[0],
+      deadline: newTask.deadline.toISOString().split('T')[0],
+      dailyPomodoros: newTask.dailyPomodoros
+    });
 
+    // 先添加主任務
     onAddTask(newTask);
+
+    // 如果是每日任務，自動生成子任務
+    if (newTask.isDaily) {
+      console.log('開始生成每日任務的子任務:', {
+        taskName: newTask.name,
+        startDate: newTask.startDate.toISOString().split('T')[0],
+        deadline: newTask.deadline.toISOString().split('T')[0],
+        isDaily: newTask.isDaily,
+        dailyPomodoros: newTask.dailyPomodoros
+      });
+      
+      const generatedSubTasks = splitTaskIntoSubTasks(newTask);
+      console.log('每日任務自動生成的子任務:', generatedSubTasks);
+      console.log('主任務ID:', newTask.id);
+      
+      // 批量添加子任務
+      console.log('批量添加子任務:', generatedSubTasks.length, '個');
+      onAddSubTasks(generatedSubTasks);
+    }
+
     setShowTaskForm(false);
   };
 
