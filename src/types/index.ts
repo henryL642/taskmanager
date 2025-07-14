@@ -143,4 +143,30 @@ export const STORAGE_KEYS = {
   SETTINGS: 'tomato-timer-settings',
   DAILY_STATS: 'tomato-timer-daily-stats',
   MONTHLY_STATS: 'tomato-timer-monthly-stats',
-} as const; 
+  MEMOS: 'tomato-timer-memos',
+} as const;
+
+// 備忘錄類型
+export interface Memo {
+  id: string;
+  title: string;
+  content: string;
+  category: MemoCategory;
+  priority: 'low' | 'medium' | 'high';
+  status: 'pending' | 'in-progress' | 'completed';
+  createdAt: Date;
+  updatedAt: Date;
+  tags?: string[];
+  isPinned?: boolean; // 是否置頂
+}
+
+// 備忘錄分類
+export type MemoCategory = 'project' | 'idea' | 'interruption' | 'todo' | 'note' | 'other';
+
+// 備忘錄分類配置
+export interface MemoCategoryConfig {
+  value: MemoCategory;
+  label: string;
+  color: string;
+  icon: string;
+} 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ProjectTag } from '../../types';
-import { projectTagStorage } from '../../utils/storage';
+import { ProjectTag, Task } from '../../types';
+import { projectTagStorage, taskStorage } from '../../utils/storage';
 import ProjectTagForm from './ProjectTagForm';
 import ProjectTagList from './ProjectTagList';
 import { Plus, Search } from 'lucide-react';
@@ -74,7 +74,26 @@ const ProjectManager: React.FC = () => {
 
   // 處理刪除
   const handleDelete = (projectTagId: string) => {
-    if (confirm('確定要刪除這個專案標籤嗎？相關的任務將失去專案標籤。')) {
+    // 檢查是否有任務使用此專案標籤
+    const tasks = taskStorage.getAll();
+    const tasksUsingProject = tasks.filter((task: Task) => task.projectTagId === projectTagId);
+    
+    let confirmMessage = '確定要刪除這個專案標籤嗎？';
+    if (tasksUsingProject.length > 0) {
+      confirmMessage += `\n\n注意：有 ${tasksUsingProject.length} 個任務正在使用此專案標籤，刪除後這些任務將失去專案標籤。`;
+    }
+    
+    if (confirm(confirmMessage)) {
+      // 清除相關任務的專案標籤
+      if (tasksUsingProject.length > 0) {
+        const updatedTasks = tasks.map((task: Task) => 
+          task.projectTagId === projectTagId 
+            ? { ...task, projectTagId: undefined, updatedAt: new Date() }
+            : task
+        );
+        taskStorage.saveAll(updatedTasks);
+      }
+      
       projectTagStorage.delete(projectTagId);
       loadProjectTags();
     }

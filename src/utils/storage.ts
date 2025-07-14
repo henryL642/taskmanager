@@ -1,4 +1,4 @@
-import { Task, SubTask, PomodoroRecord, ProjectTag, AppSettings, DailyStats, MonthlyStats, STORAGE_KEYS } from '../types';
+import { Task, SubTask, PomodoroRecord, ProjectTag, AppSettings, DailyStats, MonthlyStats, STORAGE_KEYS, Memo } from '../types';
 
 /**
  * 本地存儲工具類
@@ -705,4 +705,73 @@ export const clearAllData = (): void => {
   Object.values(STORAGE_KEYS).forEach(key => {
     localStorage.removeItem(key);
   });
+}; 
+
+// 備忘錄存儲
+export const memoStorage = {
+  // 保存所有備忘錄
+  saveAll: (memos: Memo[]): void => {
+    if (!isLocalStorageAvailable()) return;
+    
+    const data = memos.map(memo => ({
+      ...memo,
+      createdAt: memo.createdAt.toISOString(),
+      updatedAt: memo.updatedAt.toISOString(),
+    }));
+    
+    localStorage.setItem(STORAGE_KEYS.MEMOS, JSON.stringify(data));
+    
+    // 創建備份
+    dataSecurity.autoBackup();
+  },
+
+  // 獲取所有備忘錄
+  getAll: (): Memo[] => {
+    if (!isLocalStorageAvailable()) return [];
+    
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.MEMOS);
+      if (!data) return [];
+      
+      const memos = JSON.parse(data);
+      return memos.map((memo: any) => ({
+        ...memo,
+        createdAt: new Date(memo.createdAt),
+        updatedAt: new Date(memo.updatedAt),
+      }));
+    } catch (error) {
+      console.error('讀取備忘錄數據失敗:', error);
+      return [];
+    }
+  },
+
+  // 添加備忘錄
+  add: (memo: Memo): void => {
+    const memos = memoStorage.getAll();
+    memos.push(memo);
+    memoStorage.saveAll(memos);
+  },
+
+  // 更新備忘錄
+  update: (updatedMemo: Memo): void => {
+    const memos = memoStorage.getAll();
+    const updatedMemos = memos.map(memo => 
+      memo.id === updatedMemo.id ? updatedMemo : memo
+    );
+    memoStorage.saveAll(updatedMemos);
+  },
+
+  // 刪除備忘錄
+  delete: (memoId: string): void => {
+    const memos = memoStorage.getAll();
+    const filteredMemos = memos.filter(memo => memo.id !== memoId);
+    memoStorage.saveAll(filteredMemos);
+  },
+
+  // 清空所有備忘錄
+  clear: (): void => {
+    if (!isLocalStorageAvailable()) return;
+    localStorage.removeItem(STORAGE_KEYS.MEMOS);
+    dataSecurity.autoBackup();
+  },
 }; 

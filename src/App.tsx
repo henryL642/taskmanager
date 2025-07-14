@@ -10,6 +10,7 @@ import Timer from './components/Timer/Timer';
 import DataManager from './components/UI/DataManager';
 import ProjectManager from './components/ProjectManager/ProjectManager';
 import Settings from './components/Settings/Settings';
+import { MemoManager } from './components/Memo';
 import { taskStorage, subTaskStorage, pomodoroStorage, settingsStorage } from './utils/storage';
 
 // 臨時子任務類型
@@ -29,7 +30,7 @@ interface TempSubTask {
 const App: React.FC = () => {
   // 狀態管理
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [activeView, setActiveView] = useState<'calendar' | 'tasks' | 'projects' | 'charts' | 'data' | 'settings'>('calendar');
+  const [activeView, setActiveView] = useState<'calendar' | 'tasks' | 'projects' | 'charts' | 'data' | 'settings' | 'memos'>('calendar');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   
   // 數據狀態
@@ -284,6 +285,8 @@ const App: React.FC = () => {
         );
       case 'projects':
         return <ProjectManager />;
+      case 'memos':
+        return <MemoManager />;
       case 'data':
         return <DataManager />;
       case 'settings':

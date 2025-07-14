@@ -1,6 +1,7 @@
 import React from 'react';
 import { Task } from '../../types';
 import { formatDateLocal, calculateTaskProgress, getPriorityText, getPriorityColor } from '../../utils/helpers';
+import { projectTagStorage } from '../../utils/storage';
 
 interface TaskListProps {
   tasks: Task[];
@@ -112,6 +113,21 @@ const TaskList: React.FC<TaskListProps> = ({
                       {getPriorityText(task.priority)}
                     </span>
                   )}
+                  {task.projectTagId && (() => {
+                    const projectTag = projectTagStorage.getById(task.projectTagId);
+                    return projectTag ? (
+                      <span 
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                        style={{ 
+                          backgroundColor: `${projectTag.color}20`, 
+                          color: projectTag.color,
+                          border: `1px solid ${projectTag.color}40`
+                        }}
+                      >
+                        📋 {projectTag.name}
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
 
                 {/* 進度條 */}

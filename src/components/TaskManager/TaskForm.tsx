@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Task } from '../../types';
+import { Task, ProjectTag } from '../../types';
+import { projectTagStorage } from '../../utils/storage';
 
 interface TaskFormProps {
   task?: Task | null;
@@ -28,7 +29,20 @@ const TaskForm: React.FC<TaskFormProps> = ({
     priority: 'medium' as 'low' | 'medium' | 'high',
     color: '#ef4444',
     autoSplit: false, // 新增 autoSplit 欄位，預設 false
+    projectTagId: '', // 新增專案標籤ID
   });
+
+  // 專案標籤狀態
+  const [projectTags, setProjectTags] = useState<ProjectTag[]>([]);
+
+  // 載入專案標籤
+  useEffect(() => {
+    const loadProjectTags = () => {
+      const tags = projectTagStorage.getActive(); // 只載入活躍的專案
+      setProjectTags(tags);
+    };
+    loadProjectTags();
+  }, []);
 
   // 初始化表單數據
   useEffect(() => {
@@ -45,6 +59,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         priority: task.priority || 'medium',
         color: task.color || '#ef4444',
         autoSplit: task.isDaily ? true : (task.autoSplit ?? false), // 每日任務預設自動分配
+        projectTagId: task.projectTagId || '', // 新增專案標籤ID
       });
     }
   }, [task]);
@@ -97,6 +112,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
       priority: formData.priority,
       color: formData.color,
       autoSplit: formData.isDaily ? true : formData.autoSplit, // 每日任務預設自動分配
+      projectTagId: formData.projectTagId || undefined, // 新增專案標籤ID
     };
     
     console.log('TaskForm 提交的任務數據:', {
@@ -260,6 +276,30 @@ const TaskForm: React.FC<TaskFormProps> = ({
             <option value="medium">中</option>
             <option value="high">高</option>
           </select>
+        </div>
+
+        {/* 專案標籤 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            專案標籤
+          </label>
+          <select
+            value={formData.projectTagId}
+            onChange={(e) => handleInputChange('projectTagId', e.target.value)}
+            className="input-field"
+          >
+            <option value="">無專案標籤</option>
+            {projectTags.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name} ({project.type === 'quarterly' ? '季度' : project.type === 'yearly' ? '年度' : '自定義'})
+              </option>
+            ))}
+          </select>
+          {projectTags.length === 0 && (
+            <p className="text-xs text-gray-500 mt-1">
+              沒有可用的專案標籤，請先在專案管理中創建專案
+            </p>
+          )}
         </div>
 
         {/* 顏色標識 */}

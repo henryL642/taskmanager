@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Task, SubTask } from '../../types';
 import { generateId, formatDateLocal, getTaskStatusText, getPriorityText, getPriorityColor, splitTaskIntoSubTasks } from '../../utils/helpers';
+import { projectTagStorage } from '../../utils/storage';
 import TaskForm from './TaskForm';
 import TaskList from './TaskList';
 import SubTaskManager from './SubTaskManager';
@@ -63,6 +64,17 @@ const TaskManager: React.FC<TaskManagerProps> = ({
       case 'status':
         const statusOrder = { 'in-progress': 3, pending: 2, completed: 1 };
         return (statusOrder[b.status] || 0) - (statusOrder[a.status] || 0);
+      case 'project':
+        // 專案排序：無專案的任務排在最後，有專案的按專案名稱排序
+        const projectA = a.projectTagId ? projectTagStorage.getById(a.projectTagId) : null;
+        const projectB = b.projectTagId ? projectTagStorage.getById(b.projectTagId) : null;
+        
+        if (!projectA && !projectB) return 0; // 都沒有專案，保持原順序
+        if (!projectA) return 1; // A沒有專案，排在後面
+        if (!projectB) return -1; // B沒有專案，排在後面
+        
+        // 都有專案，按專案名稱排序
+        return projectA.name.localeCompare(projectB.name);
       default:
         return 0;
     }
@@ -219,6 +231,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({
             <option value="deadline">按截止日期</option>
             <option value="name">按名稱</option>
             <option value="priority">按優先級</option>
+            <option value="project">按專案</option>
             <option value="createdAt">按創建時間</option>
             <option value="status">按狀態</option>
           </select>

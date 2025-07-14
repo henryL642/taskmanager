@@ -1,13 +1,13 @@
 import React from 'react';
-import { Calendar, List, BarChart3, Database, Target, Menu, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { Calendar, List, BarChart3, Database, Target, Menu, ChevronLeft, ChevronRight, Settings, StickyNote } from 'lucide-react';
 import { formatDateLocal } from '../../utils/helpers';
 
 interface HeaderProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   onToggleSidebar: () => void;
-  activeView: 'calendar' | 'tasks' | 'projects' | 'charts' | 'data' | 'settings';
-  onViewChange: (view: 'calendar' | 'tasks' | 'projects' | 'charts' | 'data' | 'settings') => void;
+  activeView: 'calendar' | 'tasks' | 'projects' | 'charts' | 'data' | 'settings' | 'memos';
+  onViewChange: (view: 'calendar' | 'tasks' | 'projects' | 'charts' | 'data' | 'settings' | 'memos') => void;
   isSidebarOpen: boolean;
 }
 
@@ -67,6 +67,12 @@ const Header: React.FC<HeaderProps> = ({
       label: '統計',
       icon: BarChart3,
       description: '查看統計圖表',
+    },
+    {
+      id: 'memos' as const,
+      label: '備忘錄',
+      icon: StickyNote,
+      description: '管理備忘錄',
     },
     {
       id: 'data' as const,

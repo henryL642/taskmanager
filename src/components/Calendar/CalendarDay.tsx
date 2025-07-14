@@ -1,6 +1,7 @@
 import React from 'react';
 import { Task, SubTask } from '../../types';
 import { calculateTaskProgress, calculateSubTaskProgress } from '../../utils/helpers';
+import { projectTagStorage } from '../../utils/storage';
 
 // 臨時子任務類型
 interface TempSubTask {
@@ -122,6 +123,8 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
         {tasks.map(task => {
           const progress = calculateTaskProgress(task);
           const isCompleted = task.status === 'completed';
+          const projectTag = task.projectTagId ? projectTagStorage.getById(task.projectTagId) : null;
+          
           return (
             <div
               key={`task-${task.id}`}
@@ -129,14 +132,14 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
                 e.stopPropagation();
                 onTaskClick(task);
               }}
-              className={`p-1 rounded text-xs cursor-pointer transition-colors ${
+              className={`p-1 rounded text-xs cursor-pointer transition-colors relative ${
                 isCompleted
                   ? 'bg-green-100 text-green-800 hover:bg-green-200'
                   : task.status === 'in-progress'
                   ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
                   : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
               }`}
-              title={`${task.name} - ${progress}% 完成`}
+              title={`${task.name}${projectTag ? ` (${projectTag.name})` : ''} - ${progress}% 完成`}
             >
               <div className="flex items-center justify-between">
                 <span className="font-medium">{task.shortName || task.name.charAt(0)}</span>
@@ -155,6 +158,14 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
+              {/* 專案標籤小標識 */}
+              {projectTag && (
+                <div
+                  className="absolute top-0 right-0 w-2 h-2 rounded-full"
+                  style={{ backgroundColor: projectTag.color }}
+                  title={projectTag.name}
+                />
+              )}
             </div>
           );
         })}
